@@ -8,7 +8,6 @@ connectDB();
 // ✅ CORS configuration (FIXES your error)
 app.use(cors({
   origin: [
-    "http://localhost:3000",
     "https://frontend-inventory-an8n9ksn2-anushs-projects-ad1fd8c3.vercel.app"
   ],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
