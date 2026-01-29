@@ -8,9 +8,20 @@ connectDB();
 app.use(cors());
 app.use(express.json());
 
+// Root route
+app.get("/", (req, res) => {
+  res.json({ message: "Inventory Management API is running!" });
+});
+
+// Health check endpoint (useful for Render)
+app.get("/health", (req, res) => {
+  res.json({ status: "ok" });
+});
+
 app.use("/api/products", require("./routes/productRoutes"));
 app.use("/api/sales", require("./routes/saleRoutes"));
 app.use("/api/purchases", require("./routes/purchaseRoutes"));
 app.use("/api/suppliers", require("./routes/supplierRoutes"));
 
-app.listen(5000, () => console.log("Server running on port 5000"));
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
