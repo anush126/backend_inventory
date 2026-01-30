@@ -5,15 +5,22 @@ const connectDB = require("./config/db");
 const app = express();
 connectDB();
 
-// CORS: allow frontend (Vercel). Add FRONTEND_URL on Render for your Vercel URL.
-const allowedOrigins = [
-  "http://localhost:3000",
-  process.env.FRONTEND_URL,
-  "https://frontend-inventory-gc2bg7050-anushs-projects-ad1fd8c3.vercel.app"
-].filter(Boolean);
+// CORS: allow localhost + any Vercel deployment (*.vercel.app) so preview/production URLs work
+function corsOrigin(origin, callback) {
+  const allowed = [
+    "http://localhost:3000",
+    process.env.FRONTEND_URL
+  ].filter(Boolean);
+  const fromVercel = origin && origin.endsWith(".vercel.app");
+  if (!origin || allowed.includes(origin) || fromVercel) {
+    callback(null, true);
+  } else {
+    callback(null, false);
+  }
+}
 
 app.use(cors({
-  origin: allowedOrigins,
+  origin: corsOrigin,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true
