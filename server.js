@@ -9,7 +9,7 @@ connectDB();
 function corsOrigin(origin, callback) {
   const allowed = [
     "http://localhost:3000",
-    "https://frontend-inventory-r6k6j0kdm-anushs-projects-ad1fd8c3.vercel.app"
+    "https://frontend-inventory-r6k6j0kdm-anushs-projects-ad1fd8c3.vercel.app/api"
   ].filter(Boolean);
   const fromVercel = origin && origin.endsWith(".vercel.app");
   if (!origin || allowed.includes(origin) || fromVercel) {
