@@ -19,10 +19,28 @@ router.post("/", async (req, res) => {
     product.stock = (Number(product.stock) || 0) - qty;
     await product.save();
 
-    const sale = new Sale({ ...req.body, quantity: qty });
+    const dateStr = req.body.date != null ? String(req.body.date).trim() : "";
+    let saleDate = dateStr ? new Date(dateStr) : new Date();
+    if (isNaN(saleDate.getTime())) saleDate = new Date();
+
+    const sale = new Sale({
+      customerName: req.body.customerName,
+      productName: req.body.productName,
+      category: req.body.category,
+      quantity: qty,
+      price: Number(req.body.price),
+      date: saleDate
+    });
+    sale.date = saleDate;
+    sale.markModified("date");
     await sale.save();
 
-    res.json(sale);
+    // Ensure date is in DB: update again so it's definitely persisted
+    await Sale.findByIdAndUpdate(sale._id, { date: saleDate }, { runValidators: true });
+
+    const saved = await Sale.findById(sale._id).lean();
+    console.log("[Sales] New sale saved with date:", saved?.date ? new Date(saved.date).toISOString() : "MISSING");
+    res.json(saved);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -31,7 +49,7 @@ router.post("/", async (req, res) => {
 // Get All Sales
 router.get("/", async (req, res) => {
   try {
-    const sales = await Sale.find();
+    const sales = await Sale.find().sort({ date: -1 });
     res.json(sales);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -41,7 +59,17 @@ router.get("/", async (req, res) => {
 // Update Sale
 router.put("/:id", async (req, res) => {
   try {
-    const updated = await Sale.findByIdAndUpdate(req.params.id, req.body, {
+    const dateStr = req.body.date != null ? String(req.body.date).trim() : "";
+    const update = {
+      customerName: req.body.customerName,
+      productName: req.body.productName,
+      category: req.body.category,
+      quantity: Math.max(1, Number(req.body.quantity) || 1),
+      price: Number(req.body.price),
+      date: dateStr ? new Date(dateStr) : new Date()
+    };
+    if (isNaN(update.date.getTime())) update.date = new Date();
+    const updated = await Sale.findByIdAndUpdate(req.params.id, update, {
       new: true,
       runValidators: true
     });
