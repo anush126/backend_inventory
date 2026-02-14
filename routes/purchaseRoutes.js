@@ -10,17 +10,19 @@ router.post("/", async (req, res) => {
     const purchase = new Purchase(req.body);
     await purchase.save();
 
-    // Keep Products stock in sync (upsert by name+category)
+    // Update product stock: add purchased quantity to the product (match by name + category)
+    const name = (req.body.name && String(req.body.name).trim()) || "";
+    const category = (req.body.category && String(req.body.category).trim()) || "";
     const qty = Number(req.body.stock) || 0;
-    if (qty !== 0) {
-      await Product.findOneAndUpdate(
-        { name: req.body.name, category: req.body.category },
-        {
-          $setOnInsert: { name: req.body.name, category: req.body.category, stock: 0 },
-          $inc: { stock: qty }
-        },
-        { upsert: true, new: true }
-      );
+
+    if (name && qty > 0) {
+      const product = await Product.findOne({ name, category });
+      if (product) {
+        product.stock = (Number(product.stock) || 0) + qty;
+        await product.save();
+      } else {
+        await Product.create({ name, category, stock: qty });
+      }
     }
 
     res.json(purchase);
@@ -29,10 +31,10 @@ router.post("/", async (req, res) => {
   }
 });
 
-// Get All Purchases
+// Get All Purchases (newest first)
 router.get("/", async (req, res) => {
   try {
-    const purchases = await Purchase.find();
+    const purchases = await Purchase.find().sort({ _id: -1 });
     res.json(purchases);
   } catch (err) {
     res.status(500).json({ error: err.message });
